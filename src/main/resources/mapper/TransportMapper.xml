@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.TransportMapper">
+    <resultMap id="CourseResultMap" type="com.commucation.demo.entity.Course">
+        <result column="Id" property="id" />
+        <result column="course_id" property="course_id" />
+        <result column="course_name" property="course_name" />
+        <result column="teacher_id" property="teacher_id" />
+        <result column="group_id" property="group_id" />
+        <result column="class_time" property="class_time" />
+        <result column="class_add" property="class_add" />
+        <result column="xkkh" property="xkkh" />
+        <result column="lrsz" property="lrsz" />
+        <result column="xf" property="xf" />
+    </resultMap>
+    <resultMap id="TeacherResultMap" type="com.commucation.demo.entity.Teacher">
+        <result column="Id" property="id" />
+        <result column="teacher_no" property="teacher_no" />
+    </resultMap>
+    <resultMap id="StudentResultMap" type="com.commucation.demo.entity.Student">
+        <result column="Id" property="id" />
+        <result column="stu_no" property="stu_no" />
+        <result column="class_no" property="class_no" />
+        <result column="college" property="college" />
+        <result column="major" property="major" />
+    </resultMap>
+    <resultMap id="StuCourseResultMap" type="com.commucation.demo.entity.StuCourse">
+        <result column="Id" property="id" />
+        <result column="stu_id" property="stu_id" />
+        <result column="course_id" property="course_id" />
+        <result column="cj" property="cj" />
+        <result column="jd" property="jd" />
+        <result column="sycj" property="sycj" />
+        <result column="xksj" property="xksj" />
+    </resultMap>
+    <resultMap id="SystemNoteResultMap" type="com.commucation.demo.entity.SystemNote">
+        <result column="id" property="id" />
+        <result column="content" property="content" />
+        <result column="gmt_create" property="gmt_create" />
+        <result column="sender" property="sender" />
+        <result column="user_id" property="user_id" />
+        <result column="is_read" property="is_read" />
+        <result column="dir" property="dir" />
+        <result column="title" property="title" />
+    </resultMap>
+    <insert id="createGroup">
+        insert into course_group(group_name, course_id)
+            value (#{group_name}, #{course_id})
+    </insert>
+    <select id="findCourseIdByXKKH" resultType="Integer">
+        select Id
+        from course
+        where xkkh = #{xkkh}
+    </select>
+    <insert id="insertCourseInfo">
+        insert into course(xkkh, teacher_id, teacher_name, course_name, class_time, class_add)
+            value (#{xkkh}, #{teacher_id}, #{teacher_name}, #{course_name}, #{class_time}, #{class_add})
+    </insert>
+    <insert id="insertTeacherInfo">
+        insert into teacher(teacher_no, belong_department)
+            value (#{teacher_no}, #{belong_department})
+    </insert>
+    <insert id="insertStudentInfo">
+        insert into student(stu_no, class_no, college, major, dqszj)
+            value (#{stu_no}, #{class_no}, #{college}, #{major}, #{dqszj})
+    </insert>
+    <insert id="insertUserInfo">
+        insert into user_table(role_id, username, gmt_create, identity_no, password, phone)
+            value (#{role_id}, #{username}, #{gmt_create}, #{identity_no}, #{password}, #{phone})
+    </insert>
+    <select id="findTeacherByYHM" resultMap="TeacherResultMap">
+        select *
+        from teacher
+        where teacher_no = #{yhm}
+    </select>
+    <select id="findStudentByXH" resultMap="StudentResultMap">
+        select *
+        from student
+        where stu_no = #{xh}
+    </select>
+    <select id="findCourseByXKKH" resultMap="CourseResultMap">
+        select *
+        from course
+        where xkkh = #{xkkh}
+    </select>
+    <select id="findStuCourseByXHAndXKKH" resultMap="StuCourseResultMap">
+        select *
+        from stu_course
+        where stu_id = (select Id from student where stu_no = #{xh})
+          and course_id = (select Id from course where xkkh = #{xkkh})
+          and is_deleted = 0
+    </select>
+    <select id="findStuCourseByXHAndXKKHs" resultMap="StuCourseResultMap">
+        select *
+        from stu_course
+        where stu_id = (select Id from student where stu_no = #{xh})
+          and course_id = (select Id from course where xkkh = #{xkkh})
+          and is_deleted = 0
+    </select>
+    <insert id="insertStuCourseInfo">
+        insert into stu_course(stu_id, course_id, xksj)
+            value (#{stu_id}, #{course_id}, #{xksj})
+    </insert>
+    <update id="deleteStuCourseById">
+        update stu_course
+        set is_deleted = 1
+        where Id = #{id}
+    </update>
+    <update id="changeGradeStatus">
+        update course
+        set lrsz = #{status}
+        where Id = #{course_id}
+    </update>
+    <update id="changeGrade">
+        update stu_course
+        set cj = #{cj}, jd = #{jd}
+        where course_id = (select Id from course where xkkh = #{xkkh})
+          and stu_id = (select Id from student where stu_no = #{identity_no})
+          and is_deleted = 0
+    </update>
+    <insert id="insertSystemNote">
+        insert into system_note(content, gmt_create, sender, user_id, dir, title)
+            value(#{content}, #{gmt_create}, #{sender}, #{user_id}, #{dir}, #{title})
+    </insert>
+    <select id="findMaxIdOfSystemNote" resultType="Integer">
+        select MAX(id)
+        from system_note
+        where is_deleted = 0
+    </select>
+    <select id="findSystemNoteByContentAndTime" resultMap="SystemNoteResultMap">
+        select DISTINCT gmt_create, content
+        from system_note
+        where gmt_create = #{gmt_create}
+          and content = #{content}
+    </select>
+    <select id="findGroupIdByCourseId" resultType="Integer">
+        select Id
+        from course_group
+        where course_id = #{course_id}
+    </select>
+    <update id="addGroupIdToCourseInfo">
+        update course
+        set group_id = #{group_id}
+        where Id = #{course_id}
+    </update>
+    <select id="findTeacherNum" resultType="Integer">
+        select teacher_num
+        from strip_number
+        where id = 1
+    </select>
+    <update id="updateTeacherNum">
+        update strip_number
+        set teacher_num = #{num}
+        where id = 1
+    </update>
+    <select id="findStudentNum" resultType="Integer">
+        select student_num
+        from strip_number
+        where id = 1
+    </select>
+    <update id="updateStudentNum">
+        update strip_number
+        set student_num = #{num}
+        where id = 1
+    </update>
+    <select id="findJXRWBVIEWNum" resultType="Integer">
+        select jxrwbview_num
+        from strip_number
+        where id = 1
+    </select>
+    <update id="updateJXRWBVIEWNum">
+        update strip_number
+        set jxrwbview_num = #{num}
+        where id = 1
+    </update>
+    <insert id="insertUserGroupInfo">
+        insert into user_group(user_id, group_id)
+        value(#{user_id}, #{group_id})
+    </insert>
+    <update id="updateStrip">
+        update strip_number
+        set dqxn = #{xn}, dqxq = #{xq}
+        where id = 1
+    </update>
+</mapper>

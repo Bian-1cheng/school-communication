@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="com.commucation.demo.entity.User" >
+        <result column="Id" property="id" />
+        <result column="pid" property="pid" />
+        <result column="role_id" property="role_id" />
+        <result column="username" property="username" />
+        <result column="sex" property="sex" />
+        <result column="gmt_create" property="gmt_create" />
+        <result column="is_blocked" property="is_blocked" />
+        <result column="phone" property="phone" />
+        <result column="email" property="email" />
+        <result column="identity_no" property="identity_no" />
+        <result column="password" property="password" />
+        <result column="is_online" property="is_online" />
+        <result column="is_deleted" property="is_deleted" />
+        <result column="head" property="headDir" />
+        <result column="online_devices" property="online_devices" />
+    </resultMap>
+    <resultMap id="SessionResultMap" type="com.commucation.demo.entity.Session">
+        <result column="group_id" property="groupId" />
+        <result column="group_name" property="groupName" />
+        <result column="username" property="sendUserName" />
+        <result column="gmt_create" property="sendTime" />
+        <result column="content" property="content" />
+        <result column="is_read" property="is_read" />
+    </resultMap>
+    <resultMap id="StudentMap" type="com.commucation.demo.entity.Student">
+        <result column="class_no" property="class_no" />
+        <result column="major" property="major" />
+    </resultMap>
+    <select id="findById" resultMap="BaseResultMap">
+        select * from user_table where id = #{id}
+    </select>
+    <select id="findAll" resultMap="BaseResultMap">
+        select * from user_table
+    </select>
+    <select id="findByUsername" resultMap="BaseResultMap">
+        select * from user_table where identity_no = #{identityNo} and is_deleted = 0
+    </select>
+    <select id="loginCheck" resultMap="BaseResultMap">
+        select * from user_table where is_deleted = 0 AND identity_no = #{identityNo} AND password = #{password}
+    </select>
+    <select id="findUserByGroupId" resultMap="BaseResultMap">
+        select *
+        from user_table
+        where id IN(
+            select user_id
+            from user_group
+            where group_id = #{id} AND is_deleted = 0
+        )
+    </select>
+    <update id="changeLoginStatus">
+        update user_table set is_online = NOT is_online
+        where id = (select id from (select id from user_table where identity_no = #{identityNo}) a)
+    </update>
+    <select id="findSession" resultMap="SessionResultMap">
+        select
+            max.*
+        from(
+            select
+                *
+            from(
+                select group_id, group_name, username, content, group_history.gmt_create, is_read
+                from group_history, user_table, course_group
+                where group_history.send_id = user_table.Id and course_group.Id = group_history.group_id and group_history.is_deleted = 0 and group_id in(
+                    select group_id
+                    from user_group
+                    where user_id = (select id from user_table where identity_no = #{identityNo})
+                ) and user_id = (select id from user_table where identity_no = #{identityNo})
+            ) as t
+            order by
+                gmt_create desc
+                LIMIT 100000
+        ) max
+        group by
+            group_name
+    </select>
+    <select id="findChatInfo" resultMap="BaseResultMap">
+        select username, identity_no, head
+        from userchat, user_table
+        where room_id = #{room_id}
+        and send_id != (select Id from user_table where identity_no = #{identityNo})
+        and send_id = user_table.Id
+        union
+        select username, identity_no, head
+        from userchat, user_table
+        where room_id = #{room_id}
+        and user_id != (select Id from user_table where identity_no = #{identityNo})
+        and user_id = user_table.Id
+    </select>
+    <update id="changeHead">
+        update user_table
+        set head = #{dir}
+        where Id = (select Id from (select Id from user_table where identity_no = #{identityNo}) a)
+    </update>
+    <update id="changePassword">
+        update user_table
+        set password = #{password}
+        where Id = (select Id from (select Id from user_table where identity_no = #{identityNo}) a)
+    </update>
+    <select id="findStudentInfo" resultMap="StudentMap">
+        select *
+        from student
+        where stu_no = (select identity_no from user_table where Id = #{user_id})
+    </select>
+    <update id="updateUserOnlineDevices">
+        update user_table
+        set online_devices = #{num}
+        where identity_no = #{identityNo}
+    </update>
+</mapper>

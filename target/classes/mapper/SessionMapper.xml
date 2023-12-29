@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.SessionMapper">
+    <resultMap id="SessionResultMap" type="com.commucation.demo.entity.Session">
+        <result column="group_id" property="groupId"/>
+        <result column="group_name" property="groupName"/>
+        <result column="username" property="sendUserName"/>
+        <result column="gmt_create" property="sendTime"/>
+        <result column="content" property="content"/>
+        <result column="is_read" property="is_read"/>
+        <result column="head" property="headDir" />
+        <result column="unread_num" property="unread_num" />
+    </resultMap>
+    <resultMap id="ChatResult" type="com.commucation.demo.entity.Session">
+        <result column="user_id" property="user_id" />
+        <result column="send_id" property="send_id" />
+        <result column="room_id" property="room_id" />
+        <result column="username" property="sendUserName" />
+        <result column="is_read" property="is_read" />
+        <result column="content" property="content" />
+        <result column="gmt_create" property="sendTime" />
+        <result column="head" property="headDir" />
+        <result column="chat_name" property="chatName" />
+        <result column="chat_identity_no" property="chatIdentityNo" />
+        <result column="unread_num" property="unread_num" />
+    </resultMap>
+    <resultMap id="SystemNoteMap" type="com.commucation.demo.entity.Session">
+        <result column="content" property="content" />
+        <result column="gmt_create" property="sendTime" />
+        <result column="unread_num" property="unread_num" />
+    </resultMap>
+    <resultMap id="GroupHistoryResultMap" type="com.commucation.demo.entity.GroupHistory">
+        <result column="Id" property="id"/>
+        <result column="group_id" property="group_id"/>
+        <result column="user_id" property="user_id"/>
+        <result column="send_id" property="send_id"/>
+        <result column="identity_no" property="send_identity_no"/>
+        <result column="username" property="send_username"/>
+        <result column="content" property="content"/>
+        <result column="gmt_create" property="gmt_create"/>
+        <result column="gmt_modified" property="gmt_modified"/>
+        <result column="is_read" property="is_read"/>
+        <result column="is_group_notice" property="is_group_notice" />
+    </resultMap>
+    <resultMap id="PrivateChatResult" type="com.commucation.demo.entity.Userchat">
+        <result column="Id" property="id" />
+        <result column="user_id" property="user_id" />
+        <result column="send_id" property="send_id" />
+        <result column="identity_no" property="send_identity_no"/>
+        <result column="username" property="send_username"/>
+        <result column="content" property="content" />
+        <result column="gmt_create" property="gmt_create" />
+        <result column="is_deleted" property="is_deleted" />
+        <result column="is_withdrawn" property="is_withdrawn" />
+        <result column="is_read" property="is_read" />
+    </resultMap>
+    <resultMap id="RoomIdResult" type="com.commucation.demo.entity.Userchat">
+        <result column="MIN(room_id)" property="room_id" />
+    </resultMap>
+    <resultMap id="UnreadNumResultMap" type="com.commucation.demo.entity.Session">
+        <result column="COUNT(*)" property="unread_num" />
+    </resultMap>
+    <resultMap id="GroupNoticeReadUserMap" type="com.commucation.demo.entity.User" >
+        <result column="username" property="username" />
+        <result column="head" property="headDir" />
+    </resultMap>
+    <resultMap id="SystemNoticeMap" type="com.commucation.demo.entity.SystemNote">
+        <result column="id" property="id" />
+        <result column="content" property="content" />
+        <result column="gmt_create" property="gmt_create" />
+        <result column="sender" property="sender" />
+        <result column="is_read" property="is_read" />
+        <result column="title" property="title" />
+        <result column="dir" property="dir" />
+    </resultMap>
+    <select id="findSession" resultMap="SessionResultMap">
+        select result.*, (select COUNT(*) from group_history where user_id = (select Id from user_table where identity_no = #{identityNo}) and group_id = result.group_id and is_deleted = 0 and is_read = 0) as unread_num
+        from (
+                 select max.*
+                 from(
+                         select *
+                         from(
+                                 select group_id, group_name, username, content, group_history.gmt_create, is_read, course_group.head
+                                 from group_history, user_table, course_group
+                                 where group_history.send_id = user_table.Id and course_group.Id = group_history.group_id and group_history.is_deleted = 0 and group_id in(
+                                     select group_id
+                                     from user_group
+                                     where user_id = (select id from user_table where identity_no = #{identityNo})
+                                 )
+                                   and user_id = (select id from user_table where identity_no = #{identityNo})
+                             ) as t
+                         order by
+                             gmt_create desc
+                             limit 1000000
+                     ) max
+                 group by group_name
+             ) as result
+    </select>
+    <select id="findGroupHistoryById" resultMap="GroupHistoryResultMap">
+        select *
+        from group_history, user_table
+        where group_id = #{group_id}
+          and group_history.user_id = (select Id from user_table where identity_no = #{identityNo})
+          and group_history.is_deleted = 0
+          and group_history.send_id = user_table.Id
+        order by group_history.gmt_create desc
+    </select>
+    <select id="findRoomId" resultMap="RoomIdResult">
+        select MIN(room_id)
+        from (
+                 select room_id
+                 from userchat
+                 where user_id = (select Id from user_table where identity_no = #{user_id})
+                   and send_id = (select Id from user_table where identity_no = #{send_id})
+                 union
+                 select room_id
+                 from userchat
+                 where user_id = (select Id from user_table where identity_no = #{send_id})
+                   and send_id = (select Id from user_table where identity_no = #{user_id})
+                 union
+                 select MAX(room_id) + 1
+                 from userchat
+             ) as temp
+    </select>
+    <select id="findPrivateChat" resultMap="PrivateChatResult">
+        select *
+        from userchat, user_table
+        where room_id = #{room_id}
+          and user_id = (select Id from user_table where identity_no = #{user_id})
+          and send_id in (select Id from user_table where identity_no = #{user_id} or identity_no = #{send_id})
+          and send_id = user_table.Id
+        order by userchat.gmt_create desc
+    </select>
+    <select id="findChat" resultMap="ChatResult">
+        select result.*, (select username from userchat, user_table where room_id = result.room_id and send_id != (select Id from user_table where identity_no = #{identityNo}) and send_id = user_table.Id union select username from userchat, user_table where room_id = result.room_id and user_id != (select Id from user_table where identity_no = #{identityNo}) and user_id = user_table.Id) as chat_name, (select identity_no from userchat, user_table where room_id = result.room_id and send_id != (select Id from user_table where identity_no = #{identityNo}) and send_id = user_table.Id union select identity_no from userchat, user_table where room_id = result.room_id and user_id != (select Id from user_table where identity_no = #{identityNo}) and user_id = user_table.Id) as chat_identity_no, (select head from userchat, user_table where room_id = result.room_id and send_id != (select Id from user_table where identity_no = #{identityNo}) and send_id = user_table.Id union select head from userchat, user_table where room_id = result.room_id and user_id != (select Id from user_table where identity_no = #{identityNo}) and user_id = user_table.Id) as chat_head, (select COUNT(*) from userchat where user_id = (select Id from user_table where identity_no = #{identityNo}) and room_id = result.room_id and is_deleted = 0 and is_read = 0) as unread_num
+        from (
+            select temp.*, user_table.username, user_table.identity_no
+            from (
+            select max.*
+            from (
+            select userchat.*
+            from userchat, user_table
+            where user_id = (select Id from user_table where identity_no = #{identityNo})
+            and send_id = user_table.Id
+            and userchat.is_deleted = 0
+            order by userchat.gmt_create desc
+            limit 1000000
+            ) as max
+            group by room_id
+            ) as temp, user_table
+            where temp.send_id = user_table.Id
+            ) as result
+    </select>
+    <select id="findGroupUnreadNum" resultMap="UnreadNumResultMap">
+        select COUNT(*)
+        from group_history
+        where group_id = #{group_id} and user_id = (select Id from user_table where identity_no = #{identityNo}) and is_read = 0
+    </select>
+    <select id="findChatUnreadNum" resultMap="UnreadNumResultMap">
+        select COUNT(*)
+        from userchat
+        where room_id = #{room_id} and user_id = (select Id from user_table where identity_no = #{identityNo}) and is_read = 0
+    </select>
+    <update id="changGroupUnread">
+        update group_history
+        set is_read = 1
+        where group_id = #{group_id} and user_id = (select Id from user_table where identity_no = #{identityNo})
+    </update>
+    <update id="changChatUnread">
+        update userchat
+        set is_read = 1
+        where room_id = #{room_id} and user_id = (select Id from user_table where identity_no = #{identityNo})
+    </update>
+    <select id="findSystemNoteOfLate" resultMap="SystemNoteMap">
+        select system_note.*, (select COUNT(*) from system_note where user_id = (select Id from user_table where identity_no = #{identityNo}) and is_deleted = 0 and is_read = 0) as unread_num
+        from system_note
+        where user_id = (select Id from user_table where identity_no = #{identityNo})
+          and is_deleted = 0
+        order by gmt_create desc
+        limit 1
+    </select>
+    <select id="findSystemNoteUnreadNum" resultType="Integer">
+        select COUNT(*)
+        from system_note
+        where user_id = (select Id from user_table where identity_no = #{identityNo})
+          and is_read = 0
+          and is_deleted = 0
+    </select>
+    <select id="findGroupNotice" resultMap="GroupHistoryResultMap">
+        select min(Id), group_history.*
+        from group_history
+        where group_id = #{group_id}
+          and is_group_notice = 1
+          and is_deleted = 0
+        group by gmt_create
+        order by gmt_create desc
+    </select>
+    <select id="findReadUserList" resultMap="GroupNoticeReadUserMap">
+        select *
+        from user_table
+        where Id in (
+            select user_id
+            from group_history
+            where group_id = #{group_id}
+              and is_group_notice = 1
+              and gmt_create = #{gmt_create}
+              and is_read = 1
+        )
+    </select>
+    <select id="findAllSystemNotice" resultMap="SystemNoticeMap">
+        select *
+        from system_note
+        where user_id = (select Id from user_table where identity_no = #{identityNo})
+          and is_deleted = 0
+        order by gmt_create desc
+    </select>
+    <update id="changeSystemNoticeUnreadNum">
+        update system_note
+        set is_read = 1
+        where id = #{id}
+    </update>
+</mapper>

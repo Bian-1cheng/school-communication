@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.SendMessageMapper">
+    <resultMap id="GroupHistoryResult" type="com.commucation.demo.entity.GroupHistory">
+        <result column="Id" property="id" />
+        <result column="group_id" property="group_id" />
+        <result column="user_id" property="user_id" />
+        <result column="group_name" property="group_name" />
+        <result column="send_id" property="send_id" />
+        <result column="content" property="content" />
+        <result column="gmt_create" property="gmt_create" />
+        <result column="gmt_modified" property="gmt_modified" />
+        <result column="is_read" property="is_read" />
+        <result column="is_group_notice" property="is_group_notice" />
+        <result column="user_identity_no" property="user_identity_no" />
+        <result column="send_identity_no" property="send_identity_no" />
+        <result column="username" property="send_username" />
+        <result column="head_dir" property="headDir" />
+    </resultMap>
+    <resultMap id="UserchatResult" type="com.commucation.demo.entity.Userchat">
+        <result column="Id" property="id" />
+        <result column="user_id" property="user_id" />
+        <result column="send_id" property="send_id" />
+        <result column="content" property="content" />
+        <result column="gmt_create" property="gmt_create" />
+        <result column="is_deleted" property="is_deleted" />
+        <result column="is_withdrawn" property="is_withdrawn" />
+        <result column="is_read" property="is_read" />
+    </resultMap>
+    <select id="findNewGroupHistory" resultMap="GroupHistoryResult">
+        select temp.*, (select identity_no from user_table where Id = temp.user_id) as user_identity_no, (select identity_no from user_table where Id = temp.send_id) as send_identity_no, (select username from user_table where Id = temp.send_id) as username, (select head from user_table where Id = temp.send_id) as head_dir
+        from (
+                 select group_history.*, group_name
+                 from group_history, course_group
+                 where user_id = #{user_id} and group_id = #{group_id} and group_history.is_deleted = 0 and group_history.group_id = course_group.Id
+                 order by gmt_create desc
+                     limit 1
+             ) as temp
+    </select>
+    <insert id="insertMessage">
+        insert into group_history(group_id, user_id, send_id, content, gmt_create, is_read, is_group_notice)
+        value(#{group_id}, #{user_id}, #{send_id}, #{content}, #{gmt_create}, #{is_read}, #{is_group_notice})
+    </insert>
+    <select id="findNewPrivateMessage" resultMap="UserchatResult">
+        select *
+        from userchat
+        where user_id = #{user_id} and is_deleted = 0 and room_id = #{room_id}
+        order by gmt_create desc
+        limit 1
+    </select>
+    <insert id="insertPrivateMessage">
+        insert into userchat(user_id, send_id, content, gmt_create, is_read, room_id)
+        value(#{user_id}, #{send_id}, #{content}, #{gmt_create}, #{is_read}, #{room_id})
+    </insert>
+</mapper>

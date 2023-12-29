@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/test?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+
+    username: root
+    password: 123456
+
+#    password: 159753123JzS8451
+
+
+
+#  datasource:
+#    test1:
+#      driver-class-name: org.postgresql.Driver
+#      jdbc-url: jdbc:mysql://localhost:3306/edusys  #测试数据库
+#      username: root
+#      password: danielsmith
+#
+#    test2:
+#      driver-class-name: oracle.jdbc.driver.OracleDriver
+#      jdbc-url: jdbc:oracle:thin:@127.0.0.1:8888:orcl  #测试数据库
+#      username: scott
+#      password: danielsmith
+
+mybatis:
+  mapperLocations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+# server
+server:
+  port: 8082
+
+  tomcat:
+    uri-encoding: UTF-8
+

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.PersonalMapper">
+    <resultMap id="BaseResultMap" type="com.commucation.demo.entity.Course" >
+        <result column="Id" property="id" />
+        <result column="course_id" property="course_id" />
+        <result column="course_name" property="course_name" />
+        <result column="teacher_id" property="teacher_id" />
+        <result column="acdemic_id" property="acdemic_id" />
+        <result column="total_stu" property="total_stu" />
+        <result column="group_id" property="group_id" />
+        <result column="is_deleted" property="is_deleted" />
+        <result column="class_time" property="class_time" />
+        <result column="class_add" property="class_add" />
+        <result column="teacher_name" property="teacher_name" />
+    </resultMap>
+    <resultMap id="UserInfoResultMap" type="com.commucation.demo.entity.UserInfo">
+        <result column="role_id" property="role_id" />
+        <result column="identity_no" property="identity_no" />
+        <result column="username" property="username" />
+        <result column="class_no" property="class_no" />
+        <result column="college" property="college" />
+        <result column="major" property="major" />
+        <result column="belong_department" property="belong_department" />
+        <result column="tutor_course" property="tutor_course" />
+        <result column="tutor_class" property="tutor_class" />
+        <result column="finished_class" property="finished_class" />
+        <result column="teacher_title" property="teacher_title" />
+        <result column="self_introduce" property="self_introduce" />
+        <result column="level" property="level" />
+        <result column="work_no" property="work_no" />
+    </resultMap>
+    <select id="getCurriculumStu" resultMap="BaseResultMap">
+        select course_name, class_add, class_time, teacher_name
+        from course, strip_number
+        where course.Id in (
+            select course_id
+            from student, stu_course
+            where student.Id = stu_course.stu_id and student.stu_no = #{identityNo} and stu_course.is_deleted = 0
+        )
+        and course.is_deleted = 0
+        and xkkh like CONCAT('%',strip_number.dqxn,'-',strip_number.dqxq,'%')
+    </select>
+    <select id="getCurriculumTea" resultMap="BaseResultMap" >
+        select course_name, class_add, class_time, teacher_name
+        from course, strip_number
+        where teacher_id = #{identityNo}
+        and xkkh like CONCAT('%',strip_number.dqxn,'-',strip_number.dqxq,'%')
+        and is_deleted = 0
+    </select>
+    <select id="getMyInfo_student" resultMap="UserInfoResultMap">
+        select stu_no, username, class_no, college, major, role_id
+        from student, user_table
+        where student.stu_no = user_table.identity_no and student.stu_no = #{identityNo}
+    </select>
+    <select id="getMyInfo_teacher" resultMap="UserInfoResultMap">
+        select teacher_no, username, belong_department, tutor_class, tutor_course, teacher_title, self_introduce, role_id
+        from teacher, user_table
+        where teacher.teacher_no = user_table.identity_no and teacher_no = #{identityNo}
+    </select>
+</mapper>

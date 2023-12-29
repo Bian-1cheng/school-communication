@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.RelationMapper">
+    <resultMap id="MyGroupResultMap" type="com.commucation.demo.entity.Group">
+        <result column="Id" property="id" />
+        <result column="group_name" property="group_name" />
+        <result column="course_id" property="course_id" />
+    </resultMap>
+    <resultMap id="MyFinishedCourseResultMap" type="com.commucation.demo.entity.Student">
+        <result column="finished_course" property="finished_course" />
+    </resultMap>
+    <resultMap id="CourseResultMap" type="com.commucation.demo.entity.Course">
+        <result column="course_id" property="course_id" />
+        <result column="course_name" property="course_name" />
+        <result column="teacher_name" property="teacher_name" />
+        <result column="teacher_id" property="teacher_id" />
+        <result column="class_time" property="class_time" />
+        <result column="class_add" property="class_add" />
+    </resultMap>
+    <resultMap id="groupHeadResultMap" type="com.commucation.demo.entity.Group">
+        <result column="head" property="head_dir" />
+    </resultMap>
+    <resultMap id="SessionResultMap" type="com.commucation.demo.entity.SearchDialogResult">
+        <result column="name" property="name" />
+        <result column="id" property="id" />
+        <result column="head" property="head" />
+    </resultMap>
+    <select id="findGroups" resultMap="MyGroupResultMap">
+        select course_group.Id, group_name, course_group.course_id
+        from course_group, stu_course
+        where stu_id = (select Id from student where stu_no = #{identityNo}) and course_group.course_id = stu_course.course_id and course_group.is_deleted = 0 and
+            stu_course.is_deleted = 0
+    </select>
+    <select id="findMyFinishedCourse" resultMap="MyFinishedCourseResultMap">
+        select finished_course
+        from student
+        where stu_no = #{identityNo} and is_deleted = 0
+    </select>
+    <select id="searchCourseByTeacherName" resultMap="CourseResultMap">
+        select *
+        from course
+        where teacher_name = #{name}
+    </select>
+    <select id="searchCourseByCourseName" resultMap="CourseResultMap">
+        select *
+        from course
+        where course_name like CONCAT('%',#{name},'%')
+    </select>
+    <select id="findGroupHeadByGroupId" resultMap="groupHeadResultMap">
+        select head
+        from course_group
+        where Id = #{group_id}
+    </select>
+    <select id="findGroupsByTeacherNo" resultMap="MyGroupResultMap">
+        select *
+        from course_group
+        where course_id in (select Id from course where teacher_id = #{identityNo})
+    </select>
+    <select id="searchDialog" resultMap="SessionResultMap">
+        select temp.*
+        from (
+                 select username as name, Id as id, head from user_table where Id in(
+                     select user_id from user_group where group_id in (
+                         select group_id from user_group where user_id = (select Id from user_table where identity_no = #{identityNo})
+                     )
+                 )
+                 UNION
+                 select group_name as name, Id as id, head from course_group where Id in(
+                     select group_id from user_group where user_id = (select Id from user_table where identity_no = #{identityNo})
+                 )
+             ) as temp
+        where name like CONCAT('%',#{name},'%')
+    </select>
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.commucation.demo.mapper.EduTestMapper">
+    <resultMap id="BaseMap" type="com.commucation.demo.entity.EduTest">
+        <result column="MAX(id)" property="id" />
+        <result column="value" property="value" />
+    </resultMap>
+    <select id="findAll" resultMap="BaseMap">
+        select MAX(id)
+        from edu_test
+    </select>
+</mapper>
