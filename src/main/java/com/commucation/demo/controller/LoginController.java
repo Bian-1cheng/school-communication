@@ -30,6 +30,7 @@ public class LoginController {
     @Resource
     private PersonalMapper personalMapper;
 
+    // TODO 重构代码
     @PostMapping ("/login")
     public Result login(@Validated @RequestBody User user){
 
